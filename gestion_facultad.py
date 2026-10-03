@@ -1,148 +1,214 @@
-class DatoVacioError(Exception): pass
-class EstudianteNoEncontradoError(Exception): pass
-class MateriaNoEncontradaError(Exception): pass
-class EstudianteYaInscriptoError(Exception): pass
-
 class Estudiante:
-    def __init__(self, legajo, nombre):
-        self.legajo = legajo
+    def __init__(self, nombre, apellido, matricula, carrera):
         self.nombre = nombre
-        self.materias_inscriptas = []
+        self.apellido = apellido
+        self.matricula = matricula
+        self.carrera = carrera
+        self.cursos_inscriptos = []
 
-class Materia:
-    def __init__(self, codigo, nombre):
-        self.codigo = codigo
+class Curso:
+    def __init__(self, nombre, codigo, profesor, capacidad):
         self.nombre = nombre
+        self.codigo = codigo
+        self.profesor = profesor
+        self.capacidad = int(capacidad)
+        self.estudiantes_inscriptos = []
 
 class Facultad:
     def __init__(self):
         self.estudiantes = []
-        self.materias = []
+        self.cursos = []
 
     def agregar_estudiante(self, estudiante):
-        if estudiante.legajo == "" or estudiante.nombre == "":
-            raise DatoVacioError("El legajo y el nombre no pueden estar vacíos.")
+        if estudiante.matricula == "" or estudiante.nombre == "" or estudiante.apellido == "" or estudiante.carrera == "":
+            print("Error: Ningún dato del estudiante puede estar vacío.")
+            return
+            
+        if not estudiante.matricula.isdigit():
+            print("Error: La matrícula debe contener solamente números.")
+            return
+
+        for est in self.estudiantes:
+            if est.matricula == estudiante.matricula:
+                print("Error: Ya existe un estudiante con esa matrícula.")
+                return
+
         self.estudiantes.append(estudiante)
-        
-    def agregar_materia(self, materia):
-        if materia.codigo == "" or materia.nombre == "":
-            raise DatoVacioError("El código y el nombre no pueden estar vacíos.")
-        self.materias.append(materia)
+        print("Estudiante agregado correctamente.")
 
-    def eliminar_estudiante(self, legajo):
-        estudiante_encontrado = None
-        for estudiante in self.estudiantes:
-            if estudiante.legajo == legajo:
-                estudiante_encontrado = estudiante
-                break
-                
-        if not estudiante_encontrado:
-            raise EstudianteNoEncontradoError("El legajo no está registrado.")
-            
-        self.estudiantes.remove(estudiante_encontrado)
+    def agregar_curso(self, curso):
+        if curso.codigo == "" or curso.nombre == "" or curso.profesor == "":
+            print("Error: Ningún dato del curso puede estar vacío.")
+            return
 
-    def eliminar_materia(self, codigo):
-        materia_encontrada = None
-        for materia in self.materias:
-            if materia.codigo == codigo:
-                materia_encontrada = materia
-                break
-                
-        if not materia_encontrada:
-            raise MateriaNoEncontradaError("El código de materia no existe.")
-            
-        self.materias.remove(materia_encontrada)
+        for cur in self.cursos:
+            if cur.codigo == curso.codigo:
+                print("Error: Ya existe un curso con ese código.")
+                return
 
-    def inscribir_estudiante(self, legajo, codigo_materia):
-        # 1. Validar estudiante
+        self.cursos.append(curso)
+        print("Curso agregado correctamente.")
+
+    def inscribir_estudiante(self, matricula, codigo_curso):
+        if not matricula.isdigit():
+            print("Error: La matrícula debe contener solamente números.")
+            return
+
         estudiante_valido = None
+        for est in self.estudiantes:
+            if est.matricula == matricula:
+                estudiante_valido = est
+                break
+                
+        if estudiante_valido == None:
+            print("Error: La matrícula no está registrada.")
+            return
+
+        curso_valido = None
+        for cur in self.cursos:
+            if cur.codigo == codigo_curso:
+                curso_valido = cur
+                break
+                
+        if curso_valido == None:
+            print("Error: El código de curso no existe.")
+            return
+
+        for c in estudiante_valido.cursos_inscriptos:
+            if c.codigo == codigo_curso:
+                print("Error: El estudiante ya está inscripto en este curso.")
+                return
+            
+        if len(curso_valido.estudiantes_inscriptos) >= curso_valido.capacidad:
+            print("Error: No hay cupos disponibles en este curso.")
+            return
+
+        curso_valido.estudiantes_inscriptos.append(estudiante_valido)
+        estudiante_valido.cursos_inscriptos.append(curso_valido)
+        print("Estudiante inscripto correctamente.")
+
+    def baja_curso(self, matricula, codigo_curso):
+        if not matricula.isdigit():
+            print("Error: La matrícula debe contener solamente números.")
+            return
+
+        estudiante_valido = None
+        for est in self.estudiantes:
+            if est.matricula == matricula:
+                estudiante_valido = est
+                break
+                
+        if estudiante_valido == None:
+            print("Error: El estudiante no existe.")
+            return
+
+        curso_valido = None
+        for cur in self.cursos:
+            if cur.codigo == codigo_curso:
+                curso_valido = cur
+                break
+                
+        if curso_valido == None:
+            print("Error: El curso no existe.")
+            return
+
+        if curso_valido not in estudiante_valido.cursos_inscriptos:
+            print("Error: El estudiante no está inscripto en este curso.")
+            return
+
+        estudiante_valido.cursos_inscriptos.remove(curso_valido)
+        curso_valido.estudiantes_inscriptos.remove(estudiante_valido)
+        print("El estudiante se dio de baja correctamente.")
+
+    def mostrar_cursos(self):
+        if len(self.cursos) == 0:
+            print("No hay cursos registrados.")
+            return
+
+        print("\n----- CURSOS DE LA FACULTAD -----")
+        for curso in self.cursos:
+            inscriptos = len(curso.estudiantes_inscriptos)
+            disponibles = curso.capacidad - inscriptos
+            print(f"\nNombre: {curso.nombre}")
+            print(f"Código: {curso.codigo}")
+            print(f"Profesor: {curso.profesor}")
+            print(f"Capacidad máxima: {curso.capacidad}")
+            print(f"Estudiantes inscriptos: {inscriptos}")
+            print(f"Cupos disponibles: {disponibles}")
+
+    def mostrar_estudiantes(self):
+        if len(self.estudiantes) == 0:
+            print("No hay estudiantes registrados.")
+            return
+
+        print("\n----- ESTUDIANTES DE LA FACULTAD -----")
         for estudiante in self.estudiantes:
-            if estudiante.legajo == legajo:
-                estudiante_valido = estudiante
-                break
-        if not estudiante_valido:
-            raise EstudianteNoEncontradoError("El legajo no está registrado.")
+            print(f"\nNombre: {estudiante.nombre}")
+            print(f"Apellido: {estudiante.apellido}")
+            print(f"Matrícula: {estudiante.matricula}")
+            print(f"Carrera: {estudiante.carrera}")
+            
+            if len(estudiante.cursos_inscriptos) == 0:
+                print("Cursos inscriptos: Ninguno")
+            else:
+                print("Cursos inscriptos:")
+                for curso in estudiante.cursos_inscriptos:
+                    print(f"- {curso.nombre} | Código: {curso.codigo}")
 
-        materia_valida = False
-        for materia in self.materias:
-            if materia.codigo == codigo_materia:
-                materia_valida = True
-                break
-        if not materia_valida:
-            raise MateriaNoEncontradaError("El código de materia no existe.")
-
-        if codigo_materia in estudiante_valido.materias_inscriptas:
-            raise EstudianteYaInscriptoError("El alumno ya se encuentra inscripto en esta materia.")
-        
-        estudiante_valido.materias_inscriptas.append(codigo_materia)
-
-
-mi_facu = Facultad()
+facultad_urquiza = Facultad()
 
 while True:
-    print("\n- MENÚ DE LA FACULTAD -")
-    print("1. Dar de alta un estudiante")
-    print("2. Dar de alta una materia")
-    print("3. Inscribir estudiante a materia")
-    print("4. Dar de baja un estudiante")
-    print("5. Dar de baja una materia")
-    print("6. Salir del programa")
+    print("\nSistema de Gestión de Facultad:")
+    print("1- Agregar Estudiante")
+    print("2- Agregar Curso")
+    print("3- Inscribir Estudiante a Curso")
+    print("4- Dar de Baja Estudiante de Curso")
+    print("5- Mostrar Cursos")
+    print("6- Mostrar Estudiantes")
+    print("7- Salir")
     
-    opcion = input("\nElegí una opción (1-6): ")
+    opcion = input("\nSeleccione una opción: ")
     
     if opcion == "1":
-        print("\n- ALTA DE ESTUDIANTE -")
-        legajo_nuevo = input("Ingresá el legajo: ")
-        nombre_nuevo = input("Ingresá el nombre: ")
-        try:
-            mi_facu.agregar_estudiante(Estudiante(legajo_nuevo, nombre_nuevo))
-            print("Estudiante guardado.")
-        except DatoVacioError as error:
-            print(f"Error de Datos: {error}")
+        nom = input("Ingrese el nombre del estudiante: ")
+        ape = input("Ingrese el apellido del estudiante: ")
+        mat = input("Ingrese el número de matrícula: ")
+        car = input("Ingrese la carrera del estudiante: ")
+        facultad_urquiza.agregar_estudiante(Estudiante(nom, ape, mat, car))
             
     elif opcion == "2":
-        print("\n- ALTA DE MATERIA -")
-        cod_mat = input("Ingresá el código de materia (ej. MAT1): ")
-        nom_mat = input("Ingresá el nombre de la materia: ")
-        try:
-            mi_facu.agregar_materia(Materia(cod_mat, nom_mat))
-            print("Materia guardada.")
-        except DatoVacioError as error:
-            print(f"Error de Datos: {error}")
+        nom = input("Ingrese el nombre del curso: ")
+        cod = input("Ingrese el código del curso: ")
+        prof = input("Ingrese el profesor encargado: ")
+        cap = input("Ingrese la capacidad máxima de estudiantes: ")
+        
+        if not cap.isdigit() or int(cap) <= 0:
+            print("Error: La capacidad debe ser un número mayor a 0.")
+        else:
+            facultad_urquiza.agregar_curso(Curso(nom, cod, prof, cap))
             
     elif opcion == "3":
-        print("\n- INSCRIPCIÓN -")
-        legajo_ingresado = input("Legajo del estudiante: ")
-        codigo_ingresado = input("Código de la materia: ")
-        try:
-            mi_facu.inscribir_estudiante(legajo_ingresado, codigo_ingresado)
-            print("Éxito: Estudiante inscripto correctamente.")
-        except EstudianteNoEncontradoError as error:
-            print(f"Error de Estudiante: {error}")
-        except MateriaNoEncontradaError as error:
-            print(f"Error de Materia: {error}")
-        except EstudianteYaInscriptoError as error:
-            print(f"Inscripción rechazada: {error}")
+        mat = input("Ingrese la matrícula del estudiante: ")
+        cod = input("Ingrese el código del curso: ")
+        facultad_urquiza.inscribir_estudiante(mat, cod)
 
     elif opcion == "4":
-        print("\n- BAJA DE ESTUDIANTE -")
-        legajo_baja = input("Ingresá el legajo del estudiante a eliminar: ")
-        try:
-            mi_facu.eliminar_estudiante(legajo_baja)
-            print("Estudiante eliminado correctamente.")
-        except EstudianteNoEncontradoError as error:
-            print(f"Error: {error}")
+        mat = input("Ingrese la matrícula del estudiante: ")
+        cod = input("Ingrese el código del curso: ")
+        facultad_urquiza.baja_curso(mat, cod)
 
     elif opcion == "5":
-        print("\n- BAJA DE MATERIA -")
-        mat_baja = input("Ingresá el código de la materia a eliminar: ")
-        try:
-            mi_facu.eliminar_materia(mat_baja)
-            print("Materia eliminada correctamente.")
-        except MateriaNoEncontradaError as error:
-            print(f"Error: {error}")
-            
+        facultad_urquiza.mostrar_cursos()
+
     elif opcion == "6":
+        facultad_urquiza.mostrar_estudiantes()
+            
+    elif opcion == "7":
+        print("Programa Terminado")
+        break
+        
+    else:
+        print("Error: opción no válida.")
         print("Saliendo del sistema...")
         break
         
